@@ -1,11 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { memo, useState } from "react";
 import { Handle, Position, NodeToolbar } from "reactflow";
+import ClearIcon from '@mui/icons-material/Clear';
 
-const ResizableNodeSelected = ({ data, selected}) => {
+const ResizableNodeSelected = ({ data, selected }) => {
   const [isEdit, setIsEdit] = useState(false);
   const [inputValue, setInputValue] = useState(data.label);
-  const [inputActionValue, setActionInputValue] = useState('');
-  const [emoji, setEmoji] = useState(() => "🚀");
+
   const handleChange = (event) => {
     setInputValue(event.target.value);
   };
@@ -29,18 +30,47 @@ const ResizableNodeSelected = ({ data, selected}) => {
     };
     setActionArray(newArray);
   };
-  
 
   const onAddAction = () => {
     const actionObject = {
-      label: 'Enter Text Here',
+      label: "Enter Text Here",
       isEdit: false,
     };
     setActionArray((prev) => [...prev, actionObject]);
   };
+
+  const handleLabel = (index) => {
+    const newArray = [...actionArray];
+    newArray[index] = {
+      ...newArray[index],
+      isEdit: true,
+    };
+    setActionArray(newArray);
+  };
+
+  const handleBlurActions = () => {
+    const tempArray = [...actionArray];
+    tempArray.forEach((el) => {
+      el.isEdit = false;
+    });
+
+    setActionArray((prev) => [...tempArray]);
+    console.log(actionArray);
+  };
   
 
- const [actionArray,setActionArray]=useState([])
+  const handleRemoveAction=(index)=>{
+    const newArray = [...actionArray];
+    newArray.splice(index,1)
+    setActionArray(newArray);
+  
+  }
+
+  const onDeleteNode =()=>{
+
+  }
+
+  const [actionArray, setActionArray] = useState([]);
 
   return (
     <>
@@ -50,14 +80,17 @@ const ResizableNodeSelected = ({ data, selected}) => {
         minWidth={100}
         minHeight={30}
       /> */}
-      <NodeToolbar isVisible={selected} style={{
-        pointerEvents:'all'
-      }} >
-        <button onClick={onAddAction} >Action</button>
-        <button >Delete</button>
-        <button >✨</button>
+      <NodeToolbar
+        isVisible={selected}
+        style={{
+          pointerEvents: "all",
+        }}
+      >
+        <button onClick={onAddAction}>Action</button>
+        <button onClick={onDeleteNode}>Delete</button>
+        <button>more</button>
       </NodeToolbar>
-      <Handle type="target" position={Position.Top} />
+      <Handle type="target" position={Position.Left} />
       <div
         style={{
           padding: 10,
@@ -81,21 +114,38 @@ const ResizableNodeSelected = ({ data, selected}) => {
             placeholder="Enter Text here"
             onChange={handleChange}
             onBlur={handleBlur}
-            
           />
         )}
       </div>
-      {actionArray.length > 0 && actionArray.map((el:any,index:number)=>(
-        <div key={index}>
-          {!el.isEdit? (<div style={{pointerEvents:'all'}} onDoubleClick={()=>el.isEdit=true}>{el.label}</div>):(
-            <input value={el.label} className='custom-textarea' onChange={(event)=>handleActionChange(event,index)} placeholder="Enter Action Here" onBlur={()=>el.isEdit = false} />
-          )
-            }
-          </div>
-      ))
-
-      }
-      <Handle type="source" position={Position.Bottom} />
+      {actionArray.length > 0 && (
+        <div className="action-label-container">
+          {actionArray.map((el: any, index: number) => (
+            <div key={index} onBlur={handleBlurActions}>
+              {!el.isEdit ? (
+                <>
+                    <div
+                      className="label-content"
+                      style={{ pointerEvents: "all", cursor: "pointer" }}
+                      onDoubleClick={() => handleLabel(index)}
+                    >
+                      <span> {el.label}</span> <ClearIcon style={{fontSize:'12px'}} onClick={()=>handleRemoveAction(index)}/>
+                    </div>
+                </>
+              ) : (
+                <div className="label-content">
+                  <input
+                    value={el.label}
+                    className="custom-textarea"
+                    onChange={(event) => handleActionChange(event, index)}
+                    placeholder="Enter Action Here"
+                  />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      <Handle type="source" position={Position.Right} />
     </>
   );
 };
