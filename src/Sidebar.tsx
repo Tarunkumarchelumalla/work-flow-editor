@@ -41,6 +41,24 @@ const Sidebar = () => {
           </Grid>
           <Grid item xs={12}>
             <Card
+              onDragStart={(event) => onDragStart(event, "actionType2")}
+              draggable
+              sx={{ display: "flex", alignItems: "center", p: 3 }}
+            >
+              <Box sx={{ flexGrow: 1, minWidth: 0 }}>Action Node - 2</Box>
+            </Card>
+          </Grid>
+          <Grid item xs={12}>
+            <Card
+              onDragStart={(event) => onDragStart(event, "actionType3")}
+              draggable
+              sx={{ display: "flex", alignItems: "center", p: 3 }}
+            >
+              <Box sx={{ flexGrow: 1, minWidth: 0 }}>Action Node - 3</Box>
+            </Card>
+          </Grid>
+          <Grid item xs={12}>
+            <Card
               onDragStart={(event) => onDragStart(event, "group")}
               draggable
               sx={{ display: "flex", alignItems: "center", p: 3 }}

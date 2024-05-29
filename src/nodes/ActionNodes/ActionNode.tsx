@@ -1,15 +1,14 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { memo, useState } from "react";
+import { useState } from "react";
 import {
+  NodeToolbar,
   Handle,
   Position,
-  NodeToolbar,
-  useNodeId,
   useReactFlow,
+  useNodeId,
 } from "reactflow";
 import ClearIcon from "@mui/icons-material/Clear";
 
-const ResizableNodeSelected = ({ data, selected }) => {
+const ActionNode = ({ data, selected, isConnectable }) => {
   const [isEdit, setIsEdit] = useState(false);
   const [inputValue, setInputValue] = useState(data.label);
   const currentNodeId = useNodeId();
@@ -61,7 +60,7 @@ const ResizableNodeSelected = ({ data, selected }) => {
       el.isEdit = false;
     });
 
-    setActionArray((prev) => [...tempArray]);
+    setActionArray(() => [...tempArray]);
     console.log(actionArray);
   };
 
@@ -95,20 +94,16 @@ const ResizableNodeSelected = ({ data, selected }) => {
     });
   };
 
-  const handleMouseHover= ()=>{
-    console.log(currentNodeId)
-  }
-
   const [actionArray, setActionArray] = useState([]);
 
   return (
     <>
       {/* <NodeResizer
-        color="#ff0071"
-        isVisible={selected}
-        minWidth={100}
-        minHeight={30}
-      /> */}
+          color="#ff0071"
+          isVisible={selected}
+          minWidth={100}
+          minHeight={30}
+        /> */}
       <NodeToolbar
         isVisible={selected}
         style={{
@@ -119,7 +114,11 @@ const ResizableNodeSelected = ({ data, selected }) => {
         <button onClick={onDeleteNode}>Delete</button>
         <button>more</button>
       </NodeToolbar>
-      <Handle type="target" position={Position.Left} />
+      <Handle
+        type="target"
+        position={Position.Left}
+        isConnectable={isConnectable}
+      />
       <div
         style={{
           padding: 10,
@@ -131,7 +130,6 @@ const ResizableNodeSelected = ({ data, selected }) => {
           gap: "4px",
           flexWrap: "wrap",
         }}
-        onMouseEnter={handleMouseHover}
         onDoubleClick={handleDblClick}
       >
         {!isEdit && data.label}
@@ -154,7 +152,7 @@ const ResizableNodeSelected = ({ data, selected }) => {
               {!el.isEdit ? (
                 <>
                   <div
-                    className="label-content"
+                    className="action-label-content"
                     style={{ pointerEvents: "all", cursor: "pointer" }}
                     onDoubleClick={() => handleLabel(index)}
                   >
@@ -166,7 +164,7 @@ const ResizableNodeSelected = ({ data, selected }) => {
                   </div>
                 </>
               ) : (
-                <div className="label-content">
+                <div className="action-label-content">
                   <input
                     value={el.label}
                     className="custom-textarea"
@@ -179,9 +177,15 @@ const ResizableNodeSelected = ({ data, selected }) => {
           ))}
         </div>
       )}
-      <Handle type="source" position={Position.Right} />
+
+      <Handle
+        type="source"
+        position={Position.Right}
+        style={{ top: "50%", background: "#555" }}
+        isConnectable={isConnectable}
+      />
     </>
   );
 };
 
-export default memo(ResizableNodeSelected);
+export default ActionNode;

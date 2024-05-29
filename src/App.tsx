@@ -12,6 +12,7 @@ import {
   useViewport,
   MarkerType,
   updateEdge,
+  useNodes,
 } from "reactflow";
 
 import "reactflow/dist/style.css";
@@ -27,7 +28,10 @@ import ActionEdge from "./edges/ActionEdge";
 import EditableNode from "./nodes/EditableNode";
 import ResizableNode from "./nodes/ResizableNode";
 import Sidebar from "./Sidebar";
-import ActionNode from "./nodes/ActionNode";
+import ActionNode from "./nodes/ActionNodes/ActionNode";
+import ActionNodeWidthTwoEdges from "./nodes/ActionNodes/ActionNodeWith2Connections";
+import ActionNodeWidthThreeEdges from "./nodes/ActionNodes/ActionNodeWith3Connection";
+import FloatingEdge from "./edges/FloatingEdge";
 
 const nodeTypes = {
   annotation: AnnotationNode,
@@ -37,11 +41,14 @@ const nodeTypes = {
   editableNode: EditableNode,
   resizableNodeSelected: ResizableNode,
   actionNode: ActionNode,
+  actionType2:ActionNodeWidthTwoEdges,
+  actionType3:ActionNodeWidthThreeEdges
 };
 
 const edgeTypes = {
   button: ButtonEdge,
   editableEdge: ActionEdge,
+  floatingEdge:FloatingEdge
 };
 
 export default function App() {
@@ -51,19 +58,26 @@ export default function App() {
   const reactFlowWrapper = useRef(null);
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
   const { x, y, zoom } = useViewport();
-  const onConnect: OnConnect = useCallback(
+
+  const onConnect: OnConnect = 
     (connection) =>
-      setEdges((edges) => {
-        connection["type"] = "smoothstep";
+       setEdges((edges) => {
+        if(!checkNodeIsValid(connection)) return edges
+        connection["type"] = "floatingEdge";
         // connection["label"] = "🚀🚀🚀";
         connection["markerEnd"] = {
           type: MarkerType.ArrowClosed,
         };
         connection["style"] = {};
         return addEdge(connection, edges);
-      }),
-    [setEdges]
-  );
+      })
+  const checkNodeIsValid=(connection)=>{
+    const targetNode = nodes.find((node)=>node.id === connection.target)
+    const sourceNode = nodes.find((node)=>node.id === connection.source)
+    return targetNode.type === sourceNode.type ? false : true
+
+  }
+
 
   const onLoad = (_reactFlowInstance) =>{
     setReactFlowInstance(()=>_reactFlowInstance);
@@ -116,7 +130,10 @@ export default function App() {
     edgeUpdateSuccessful.current = true;
   }, []);
 
-  const onPanelClick = (nodes) => {};
+  const onPanelClick = () => {
+    console.log(nodes)
+    console.log(edges)
+  };
 
   const onDragOver = (event) => {
     event.preventDefault();
@@ -127,17 +144,17 @@ export default function App() {
 
     const reactFlowBounds = reactFlowWrapper.current.getBoundingClientRect();
     const type = event.dataTransfer.getData("application/reactflow");
-    debugger
     console.log(reactFlowInstance)
     const position = {
       x: event.clientX - reactFlowBounds.left,
       y: event.clientY - reactFlowBounds.top,
     };
+    const id = Math.random().toFixed(3)
     const newNode = {
-      id: Math.random().toFixed(3),
+      id,
       type,
       position,
-      data: { label: `${type}` },
+      data: { label: `${type} ${id}` },
     };
     setNodes((es) => es.concat(newNode));
   };

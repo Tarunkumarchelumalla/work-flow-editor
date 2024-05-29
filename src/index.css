@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -184,10 +188,12 @@ body,
   color: #fff;
 }
 
-.react-flow__node-actionNode {
+.react-flow__node-actionNode, 
+.react-flow__node-actionType2,
+.react-flow__node-actionType3 {
   background:rgb(30,30,39);
   padding: 15;
-  border-radius: 40px;
+  border-radius: 12px;
   min-width:100px;
   font-size: 12;
   display:flex;
