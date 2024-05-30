@@ -7,6 +7,7 @@ import {
   useNodeId,
 } from "reactflow";
 import ClearIcon from "@mui/icons-material/Clear";
+import { Toolbar } from "../../components/Toolbar";
 
 const ActionNode = ({ data, selected, isConnectable }) => {
   const [isEdit, setIsEdit] = useState(false);
@@ -110,9 +111,7 @@ const ActionNode = ({ data, selected, isConnectable }) => {
           pointerEvents: "all",
         }}
       >
-        <button onClick={onAddAction}>Action</button>
-        <button onClick={onDeleteNode}>Delete</button>
-        <button>more</button>
+        <Toolbar onAdd={onAddAction} onDelete={onDeleteNode} onMore={(e)=>console.log(e)}/>
       </NodeToolbar>
       <Handle
         type="target"
@@ -120,16 +119,7 @@ const ActionNode = ({ data, selected, isConnectable }) => {
         isConnectable={isConnectable}
       />
       <div
-        style={{
-          padding: 10,
-          maxWidth: "200px",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          gap: "4px",
-          flexWrap: "wrap",
-        }}
+        className="p-[10px] min-w-[200px] flex flex-col justify-center items-center flex-wrap gap-[4px]"
         onDoubleClick={handleDblClick}
       >
         {!isEdit && data.label}
@@ -145,6 +135,9 @@ const ActionNode = ({ data, selected, isConnectable }) => {
           />
         )}
       </div>
+
+      <img src={data?.url} height={44} width={44} />
+
       {actionArray.length > 0 && (
         <div className="action-label-container">
           {actionArray.map((el: any, index: number) => (
@@ -177,7 +170,7 @@ const ActionNode = ({ data, selected, isConnectable }) => {
           ))}
         </div>
       )}
-
+      
       <Handle
         type="source"
         position={Position.Right}

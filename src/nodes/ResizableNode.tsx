@@ -8,6 +8,7 @@ import {
   useReactFlow,
 } from "reactflow";
 import ClearIcon from "@mui/icons-material/Clear";
+import { Toolbar } from "../components/Toolbar";
 
 const ResizableNodeSelected = ({ data, selected }) => {
   const [isEdit, setIsEdit] = useState(false);
@@ -95,9 +96,9 @@ const ResizableNodeSelected = ({ data, selected }) => {
     });
   };
 
-  const handleMouseHover= ()=>{
-    console.log(currentNodeId)
-  }
+  const handleMouseHover = () => {
+    console.log(currentNodeId);
+  };
 
   const [actionArray, setActionArray] = useState([]);
 
@@ -115,9 +116,11 @@ const ResizableNodeSelected = ({ data, selected }) => {
           pointerEvents: "all",
         }}
       >
-        <button onClick={onAddAction}>Action</button>
-        <button onClick={onDeleteNode}>Delete</button>
-        <button>more</button>
+        <Toolbar
+          onAdd={onAddAction}
+          onDelete={onDeleteNode}
+          onMore={(e) => console.log(e)}
+        />
       </NodeToolbar>
       <Handle type="target" position={Position.Left} />
       <div
