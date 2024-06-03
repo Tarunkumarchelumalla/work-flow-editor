@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   NodeToolbar,
   Handle,
@@ -8,7 +8,7 @@ import {
 } from "reactflow";
 import ClearIcon from "@mui/icons-material/Clear";
 import { Toolbar } from "../../components/Toolbar";
-
+import '../../index.css'
 const ActionNode = ({ data, selected, isConnectable }) => {
   const [isEdit, setIsEdit] = useState(false);
   const [inputValue, setInputValue] = useState(data.label);
@@ -97,6 +97,10 @@ const ActionNode = ({ data, selected, isConnectable }) => {
 
   const [actionArray, setActionArray] = useState([]);
 
+  useEffect(()=>{
+    console.log(data)
+  },[])
+
   return (
     <>
       {/* <NodeResizer
@@ -111,13 +115,25 @@ const ActionNode = ({ data, selected, isConnectable }) => {
           pointerEvents: "all",
         }}
       >
-        <Toolbar onAdd={onAddAction} onDelete={onDeleteNode} onMore={(e)=>console.log(e)}/>
+        <Toolbar
+          onAdd={onAddAction}
+          onDelete={onDeleteNode}
+          onMore={(e) => console.log(e)}
+        />
       </NodeToolbar>
       <Handle
         type="target"
         position={Position.Left}
         isConnectable={isConnectable}
       />
+      {/* {data.targetHandles.map((handle) => (
+        <Handle
+          key={handle.id}
+          id={handle.id}
+          type="target"
+          position={Position.Left}
+        />
+      ))} */}
       <div
         className="p-[10px] min-w-[200px] flex flex-col justify-center items-center flex-wrap gap-[4px]"
         onDoubleClick={handleDblClick}
@@ -136,7 +152,7 @@ const ActionNode = ({ data, selected, isConnectable }) => {
         )}
       </div>
 
-      <img src={data?.url} height={44} width={44} />
+      {/* <img src={data?.url} height={44} width={44} /> */}
 
       {actionArray.length > 0 && (
         <div className="action-label-container">
@@ -170,13 +186,24 @@ const ActionNode = ({ data, selected, isConnectable }) => {
           ))}
         </div>
       )}
-      
-      <Handle
-        type="source"
-        position={Position.Right}
-        style={{ top: "50%", background: "#555" }}
-        isConnectable={isConnectable}
-      />
+      <div className="handles sources">
+        {data.sourceHandles ? data.sourceHandles.map((handle) => (
+          <Handle
+            key={handle.id}
+            id={handle.id}
+            type="source"
+            position={Position.Right}
+          />
+        )):(      <Handle
+          type="source"
+          position={Position.Right}
+          style={{ top: "50%", background: "#555" }}
+          isConnectable={isConnectable}
+        />)
+        
+        }
+
+      </div>
     </>
   );
 };

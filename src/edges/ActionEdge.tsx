@@ -6,6 +6,7 @@ import {
   EdgeLabelRenderer,
   BaseEdge,
   getSmoothStepPath,
+  getBezierPath,
 } from "reactflow";
 
 const ActionEdge: FC<EdgeProps> = ({
@@ -19,7 +20,7 @@ const ActionEdge: FC<EdgeProps> = ({
   targetPosition,
   label,
 }) => {
-  const [edgePath, labelX, labelY] = getSmoothStepPath({
+  const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,
     sourcePosition,

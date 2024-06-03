@@ -11,6 +11,7 @@ import ReactFlow, {
   Background,
   MiniMap,
   Controls,
+  useReactFlow,
 } from "reactflow";
 import { initialEdges } from "../edges";
 import ActionEdge from "../edges/ActionEdge";
@@ -28,7 +29,8 @@ import TextNode from "../nodes/TextNode";
 import ToolbarNode from "../nodes/ToolbarNode";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import dagre from "dagre";
-import { Padding } from "@mui/icons-material";
+
+import ELK from "elkjs/lib/elk.bundled.js";
 const nodeTypes = {
   annotation: AnnotationNode,
   tools: ToolbarNode,
@@ -45,6 +47,49 @@ const edgeTypes = {
   button: ButtonEdge,
   editableEdge: ActionEdge,
   floatingEdge: FloatingEdge,
+};
+
+const elk = new ELK();
+
+const elkOptions = {
+  "elk.algorithm": "layered",
+  "elk.layered.spacing.nodeNodeBetweenLayers": "100",
+  'elk.layered.spacing.edgeNodeBetweenLayers': '40',
+  "elk.spacing.nodeNode": "100",
+};
+
+const getLayoutedElements = (nodes, edges, options = {}) => {
+  const isHorizontal = options?.["elk.direction"] === "RIGHT";
+  const graph = {
+    id: "root",
+    layoutOptions: options,
+    children: nodes.map((node) => ({
+      ...node,
+      // Adjust the target and source handle positions based on the layout
+      // direction.
+      targetPosition: isHorizontal ? "left" : "top",
+      sourcePosition: isHorizontal ? "right" : "bottom",
+
+      // Hardcode a width and height for elk to use when layouting.
+      width: 250,
+      height: 200,
+    })),
+    edges: edges,
+  };
+
+  return elk
+    .layout(graph)
+    .then((layoutedGraph) => ({
+      nodes: layoutedGraph.children.map((node) => ({
+        ...node,
+        // React Flow expects a position property on the node instead of `x`
+        // and `y` fields.
+        position: { x: node.x, y: node.y *10 },
+      })),
+
+      edges: layoutedGraph.edges,
+    }))
+    .catch(console.error);
 };
 
 export default function Editor() {
@@ -149,60 +194,50 @@ export default function Editor() {
     setNodes((es) => es.concat(newNode));
   };
 
-  // const onLayout = useCallback(
-  //   (direction) => {
-  //     const { nodes: layoutedNodes, edges: layoutedEdges } =
-  //       getLayoutedElements(nodes, edges, direction);
+  // const dagreGraph = new dagre.graphlib.Graph();
+  // dagreGraph.setDefaultEdgeLabel(() => ({}));
+  // const nodeWidth = 200;
+  // const nodeHeight = 200;
 
-  //     setNodes([...layoutedNodes]);
-  //     setEdges([...layoutedEdges]);
-  //   },
-  //   [nodes, edges]
-  // );
+  // const getLayoutedElements = (nodes, edges, direction = "LR") => {
+  //   const isHorizontal = direction === "LR";
+  //   dagreGraph.setGraph({ rankdir: direction });
 
-  const dagreGraph = new dagre.graphlib.Graph();
-  dagreGraph.setDefaultEdgeLabel(() => ({}));
-  const nodeWidth = 200;
-  const nodeHeight = 200;
+  //   nodes.forEach((node) => {
+  //     dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight,paddingY:800 });
+  //   });
 
-  const getLayoutedElements = (nodes, edges, direction = "LR") => {
-    const isHorizontal = direction === "LR";
-    dagreGraph.setGraph({ rankdir: direction });
+  //   edges.forEach((edge) => {
+  //     dagreGraph.setEdge(edge.source, edge.target);
+  //   });
+  //   dagre.layout(dagreGraph);
+  //   nodes.forEach((node) => {
+  //     const nodeWithPosition = dagreGraph.node(node.id);
+  //     console.log(nodeWithPosition)
+  //     node.targetPosition = isHorizontal ? "left" : "top";
+  //     node.sourcePosition = isHorizontal ? "right" : "bottom";
+  //     console.log(nodeWithPosition.padding)
+  //     // We are shifting the dagre node position (anchor=center center) to the top left
+  //     // so it matches the React Flow node anchor point (top left).
+  //     node.position = {
+  //       x: nodeWithPosition.x - nodeWidth / 2,
+  //       y: nodeWithPosition.y - nodeHeight / 2 ,
+  //     };
 
-    nodes.forEach((node) => {
-      dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight,paddingY:800 });
-    });
+  //     return node;
+  //   });
 
-    edges.forEach((edge) => {
-      dagreGraph.setEdge(edge.source, edge.target);
-    });
-    dagre.layout(dagreGraph);
-    nodes.forEach((node) => {
-      const nodeWithPosition = dagreGraph.node(node.id);
-      console.log(nodeWithPosition)
-      node.targetPosition = isHorizontal ? "left" : "top";
-      node.sourcePosition = isHorizontal ? "right" : "bottom";
-      console.log(nodeWithPosition.padding)
-      // We are shifting the dagre node position (anchor=center center) to the top left
-      // so it matches the React Flow node anchor point (top left).
-      node.position = {
-        x: nodeWithPosition.x - nodeWidth / 2,
-        y: nodeWithPosition.y - nodeHeight / 2 ,
-      };
-
-      return node;
-    });
-
-    return { nodes, edges };
-  };
+  //   return { nodes, edges };
+  // };
 
   // const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
   //   initialNodes,
   //   initialEdges
   // );
-
+  const { fitView } = useReactFlow();
+ 
   const handleUpload = (event) => {
-    const nodeStyle={
+    const nodeStyle = {
       background: "#18181B",
       border: "1px solid #FFFFFF33",
       boxShadow: "0px 0px 6.8px 0px #FFFFFF33 inset",
@@ -210,7 +245,7 @@ export default function Editor() {
       fontWeight: "700",
       lineHeight: " 12px",
       textAlign: "left",
-    }
+    };
     const file = event.target.files[0];
     if (file) {
       const fileUrl = URL.createObjectURL(file);
@@ -224,30 +259,41 @@ export default function Editor() {
             el.id = el.name;
             el.data = {
               label: el.name,
+              sourceHandles:el.actions.map((action)=>{const nodeEdgeObj:any={}; return nodeEdgeObj.id=`${el.name}-${action.name}` })
             };
             el.type = "resizableNodeSelected";
-            el.style=nodeStyle;
+            el.style = nodeStyle;
             return el;
           });
-          states.forEach((el) => {
-            el.actions.forEach((action) => {
+
+          states.forEach((node) => {
+            node.actions.forEach((action) => {
+              const actionOnKeys = Object.keys(action.on);
+              const sourceHandles = actionOnKeys.map((key) => {
+                const temp:any = {};
+                temp.id = `${action.name}-${key}`;
+                return temp;
+              });
               const obj = {
                 id: action.name,
                 type: "actionNode",
                 data: {
                   label: action.name,
+                  sourceHandles:sourceHandles,
                 },
               };
               nodes.push(obj);
               const nodeActionEdge = {
-                type: "smoothstep",
-                source: el.name,
+
+                source:node.name,
                 target: action.name,
-                
+
                 data: {
                   label: action.name,
                 },
-                id: `reactflow__edge-${el.name}-${action.name}${Math.random().toFixed(4)}`,
+                id: `reactflow__edge-${node.name}-${
+                  action.name
+                }${Math.random().toFixed(4)}`,
                 markerEnd: {
                   type: "arrowclosed" as MarkerType,
                 },
@@ -256,13 +302,16 @@ export default function Editor() {
               edges.push(nodeActionEdge);
 
               const keys = Object.keys(action.on);
-              keys.forEach((key) => {
+              keys.forEach((key,index) => {
                 const edgeObj = {
                   type: "editableEdge",
                   source: action.name,
+                  sourceHandle: `${action.name}-${key}`,
                   target: action.on[key],
                   label: key,
-                  id: `reactflow__edge-${action.name}-${action.on[key]}${Math.random().toFixed(4)}`,
+                  id: `reactflow__edge-${action.name}-${
+                    action.on[key]
+                  }${Math.random().toFixed(4)}`,
                   markerEnd: {
                     type: "arrowclosed" as MarkerType,
                   },
@@ -272,15 +321,51 @@ export default function Editor() {
               });
             });
           });
-
+          nodes.map((node)=>{
+            const targetedNodes = nodes.filter((edge)=> edge.target === node.id)
+            node.data['targetHandles']= targetedNodes.map((targetedNode,index)=>
+            {
+              if(targetedNode?.data.sourceHandles.length){
+                const id= targetedNode?.data.sourceHandles[index]
+                return {
+                  id
+                }
+              }else{
+                return {
+                  id:targetedNode
+                }
+              }
+            }
+            )
+          })
           console.log(nodes, edges);
 
-          const { nodes: layoutedNodes, edges: layoutedEdges } =
-            getLayoutedElements(nodes, edges, "LR");
+          // const { nodes: layoutedNodes, edges: layoutedEdges } =
+          //   getLayoutedElements(nodes, edges, "LR");
 
-          console.log(layoutedNodes, layoutedEdges);
-          setNodes(layoutedNodes);
-          setEdges(layoutedEdges);
+          // console.log(layoutedNodes, layoutedEdges);
+          // setNodes(layoutedNodes);
+          // setEdges(layoutedEdges);
+
+          const opts = { "elk.direction": "RIGHT", ...elkOptions };
+          const ns = nodes;
+          const es = edges;
+
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          getLayoutedElements(ns, es, opts).then((res: any) => {
+            console.log(res.nodes, res.edges);
+            setNodes(res.nodes);
+            setEdges(res.edges);
+
+            window.requestAnimationFrame(() => fitView());
+          });
+          ({ nodes: layoutedNodes, edges: layoutedEdges }) => {
+            setNodes(layoutedNodes);
+            setEdges(layoutedEdges);
+
+            window.requestAnimationFrame(() => fitView());
+          }
+          
         })
         .catch((error) => {
           console.error("Error fetching JSON:", error);
@@ -289,7 +374,7 @@ export default function Editor() {
   };
 
   return (
-    <div className="w-100 h-screen" ref={reactFlowInstance}>
+    <div className="w-100 h-screen">
       <ReactFlow
         nodes={nodes}
         nodeTypes={nodeTypes}
