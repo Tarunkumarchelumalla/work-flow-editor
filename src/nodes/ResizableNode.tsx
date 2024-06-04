@@ -10,7 +10,7 @@ import {
 import ClearIcon from "@mui/icons-material/Clear";
 import { Toolbar } from "../components/Toolbar";
 
-const ResizableNodeSelected = ({ data, selected,isConnectable }) => {
+const phaseNode = ({ data, selected,isConnectable }) => {
   const [isEdit, setIsEdit] = useState(false);
   const [inputValue, setInputValue] = useState(data.label);
   const currentNodeId = useNodeId();
@@ -133,7 +133,7 @@ const ResizableNodeSelected = ({ data, selected,isConnectable }) => {
         )) : (<Handle
           type="target"
           position={Position.Left}
-          style={{ top: "50%", background: "#555" }}
+          style={{  background: "#555" }}
           isConnectable={isConnectable}
         />)
 
@@ -209,7 +209,7 @@ const ResizableNodeSelected = ({ data, selected,isConnectable }) => {
         )) : (<Handle
           type="source"
           position={Position.Right}
-          style={{ top: "50%", background: "#555" }}
+          style={{ background: "#555" }}
           isConnectable={isConnectable}
         />)
 
@@ -219,4 +219,4 @@ const ResizableNodeSelected = ({ data, selected,isConnectable }) => {
   );
 };
 
-export default memo(ResizableNodeSelected);
+export default memo(phaseNode);

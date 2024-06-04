@@ -12,7 +12,7 @@ export const initialNodes = [
       label: "Node 0.07",
       id: "0.5283029098328751",
     },
-    type: "resizableNodeSelected",
+    type: "phaseNode",
     style: {
       background: "#18181B",
       border: "1px solid #FFFFFF33",

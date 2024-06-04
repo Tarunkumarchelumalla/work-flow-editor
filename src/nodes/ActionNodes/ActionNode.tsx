@@ -8,7 +8,7 @@ import {
 } from "reactflow";
 import ClearIcon from "@mui/icons-material/Clear";
 import { Toolbar } from "../../components/Toolbar";
-import '../../index.css'
+import "../../index.css";
 const ActionNode = ({ data, selected, isConnectable }) => {
   const [isEdit, setIsEdit] = useState(false);
   const [inputValue, setInputValue] = useState(data.label);
@@ -98,8 +98,8 @@ const ActionNode = ({ data, selected, isConnectable }) => {
   const [actionArray, setActionArray] = useState([]);
 
   useEffect(() => {
-    console.log(data)
-  }, [])
+    console.log(data);
+  }, []);
 
   return (
     <>
@@ -122,20 +122,23 @@ const ActionNode = ({ data, selected, isConnectable }) => {
         />
       </NodeToolbar>
       <div className="handles targets">
-        {data?.targetHandles?.length ? data.targetHandles.map((handle) => (
+        {data?.targetHandles?.length ? (
+          data.targetHandles.map((handle) => (
+            <Handle
+              key={handle.id}
+              id={handle.id}
+              type="target"
+              position={Position.Left}
+            />
+          ))
+        ) : (
           <Handle
-            key={handle.id}
-            id={handle.id}
             type="target"
             position={Position.Left}
+            style={{ background: "#555" }}
+            isConnectable={isConnectable}
           />
-        )) : (<Handle
-          type="target"
-          position={Position.Left}
-          isConnectable={isConnectable}
-        />)
-
-        }
+        )}
       </div>
       <div
         className="p-[10px] min-w-[200px] flex flex-col justify-center items-center flex-wrap gap-[4px]"
@@ -155,7 +158,7 @@ const ActionNode = ({ data, selected, isConnectable }) => {
         )}
       </div>
 
-      {/* <img src={data?.url} height={44} width={44} /> */}
+      {/* {data?.url &&<img src={data?.url} height={44} width={44} />} */}
 
       {actionArray.length > 0 && (
         <div className="action-label-container">
@@ -168,7 +171,7 @@ const ActionNode = ({ data, selected, isConnectable }) => {
                     style={{ pointerEvents: "all", cursor: "pointer" }}
                     onDoubleClick={() => handleLabel(index)}
                   >
-                    <span> {el.label}</span>{" "}
+                    <span className="flex flex-row flex-wrap text-ellipsis w-[50px]"> {el.label}</span>
                     <ClearIcon
                       style={{ fontSize: "12px" }}
                       onClick={() => handleRemoveAction(index)}
@@ -199,8 +202,14 @@ const ActionNode = ({ data, selected, isConnectable }) => {
               position={Position.Right}
             />
           ))
-        ) : null}
-
+        ) : (
+          <Handle
+            type="source"
+            position={Position.Right}
+            style={{background: "#555" }}
+            isConnectable={isConnectable}
+          />
+        )}
       </div>
     </>
   );

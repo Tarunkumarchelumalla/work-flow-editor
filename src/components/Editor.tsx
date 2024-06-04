@@ -28,16 +28,20 @@ import ResizerNode from "../nodes/ResizerNode";
 import TextNode from "../nodes/TextNode";
 import ToolbarNode from "../nodes/ToolbarNode";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
-import dagre from "dagre";
+import ClearIcon from "@mui/icons-material/Clear";
+import CloudDownloadIcon from "@mui/icons-material/CloudDownload";
 
 import ELK from "elkjs/lib/elk.bundled.js";
+import { Button, Tooltip } from "@mui/material";
+import DialogComponent from "./DialogComponent";
+import CustomInput from "../ui/CustomInput";
 const nodeTypes = {
   annotation: AnnotationNode,
   tools: ToolbarNode,
   resizer: ResizerNode,
   textinput: TextNode,
   editableNode: EditableNode,
-  resizableNodeSelected: ResizableNode,
+  phaseNode: ResizableNode,
   actionNode: ActionNode,
   actionType2: ActionNodeWidthTwoEdges,
   actionType3: ActionNodeWidthThreeEdges,
@@ -53,9 +57,11 @@ const elk = new ELK();
 
 const elkOptions = {
   "elk.algorithm": "layered",
-  "elk.layered.spacing.nodeNodeBetweenLayers": "100",
-  'elk.layered.spacing.edgeNodeBetweenLayers': '40',
-  "elk.spacing.nodeNode": "100",
+  "elk.layered.spacing.nodeNodeBetweenLayers": 50, // space in x direction node spacing
+  "elk.layered.spacing.edgeNodeBetweenLayers": 40, // edge length in x direction
+  "elk.separateConnectedComponents": false,
+  "elk.layered.spacing.edgeEdge": 50, // no effect
+  "elk.spacing.nodeNode": 50,
 };
 
 const getLayoutedElements = (nodes, edges, options = {}) => {
@@ -71,8 +77,8 @@ const getLayoutedElements = (nodes, edges, options = {}) => {
       sourcePosition: isHorizontal ? "right" : "bottom",
 
       // Hardcode a width and height for elk to use when layouting.
-      width: 250,
-      height: 200,
+      width: 500,
+      height: 500,
     })),
     edges: edges,
   };
@@ -84,7 +90,7 @@ const getLayoutedElements = (nodes, edges, options = {}) => {
         ...node,
         // React Flow expects a position property on the node instead of `x`
         // and `y` fields.
-        position: { x: node.x, y: node.y * 10 },
+        position: { x: node.x, y: node.y },
       })),
 
       edges: layoutedGraph.edges,
@@ -97,17 +103,28 @@ export default function Editor() {
   const edgeUpdateSuccessful = useRef(true);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
-
+  const { fitView } = useReactFlow();
+  const [dialogOpen,setDialog]= useState(false)
   const { x, y, zoom } = useViewport();
+  const [fileName,setFileName] = useState('')
+
 
   const onConnect: OnConnect = (connection) =>
     setEdges((edges) => {
       if (!checkNodeIsValid(connection)) return edges;
-      connection["type"] = "smoothstep";
-      // connection["label"] = "🚀🚀🚀";
+
+      console.log(connection);
+
+      const sourceNode = nodes.find(
+        (node: any) => node.id === connection.source
+      );
+      const isPhaseNode = sourceNode.type === "phaseNode";
+
+      connection["type"] = isPhaseNode ? null : "editableEdge";
       connection["markerEnd"] = {
         type: MarkerType.ArrowClosed,
       };
+      connection["label"] = "";
       connection["style"] = {};
       return addEdge(connection, edges);
     });
@@ -129,7 +146,7 @@ export default function Editor() {
       },
       data: { label: `Node ${Math.random().toFixed(2)}`, id: id },
       origin: [0.5, 0.0],
-      type: "resizableNodeSelected",
+      type: "phaseNode",
       style: {
         background: "#18181B",
         border: "1px solid #FFFFFF33",
@@ -142,6 +159,7 @@ export default function Editor() {
     };
 
     setNodes((nds) => nds.concat(newNode));
+    window.requestAnimationFrame(() => fitView());
   };
 
   const onEdgeUpdateStart = useCallback(() => {
@@ -234,7 +252,6 @@ export default function Editor() {
   //   initialNodes,
   //   initialEdges
   // );
-  const { fitView } = useReactFlow();
 
   const handleUpload = (event) => {
     const nodeStyle = {
@@ -249,10 +266,10 @@ export default function Editor() {
     const file = event.target.files[0];
     if (file) {
       const fileUrl = URL.createObjectURL(file);
+
       fetch(fileUrl)
         .then((response) => response.json())
         .then((jsonData) => {
-          console.log(jsonData);
           const { states } = jsonData;
           const modifiedEdges = [];
           const modifiedNodes = states.map((el: any) => {
@@ -264,9 +281,9 @@ export default function Editor() {
                 nodeEdgeObj.id = `${el.name}-${action.name}`;
                 nodeEdgeObj.isConnected = false;
                 return nodeEdgeObj;
-              })
+              }),
             };
-            el.type = "resizableNodeSelected";
+            el.type = "phaseNode";
             el.style = nodeStyle;
             return el;
           });
@@ -277,7 +294,7 @@ export default function Editor() {
               const sourceHandles = actionOnKeys.map((key) => {
                 const temp: any = {};
                 temp.id = `${action.name}-${key}`;
-                temp.isConnected = false
+                temp.isConnected = false;
                 return temp;
               });
               const obj = {
@@ -290,15 +307,16 @@ export default function Editor() {
               };
               modifiedNodes.push(obj);
               const nodeActionEdge = {
-
                 source: node.name,
                 target: action.name,
 
                 data: {
                   label: action.name,
+                  url: action.type, // actionNode url
                 },
-                id: `reactflow__edge-${node.name}-${action.name
-                  }${Math.random().toFixed(4)}`,
+                id: `reactflow__edge-${node.name}-${
+                  action.name
+                }${Math.random().toFixed(4)}`,
                 markerEnd: {
                   type: "arrowclosed" as MarkerType,
                 },
@@ -314,8 +332,9 @@ export default function Editor() {
                   sourceHandle: `${action.name}-${key}`,
                   target: action.on[key],
                   label: key,
-                  id: `reactflow__edge-${action.name}-${action.on[key]
-                    }${Math.random().toFixed(4)}`,
+                  id: `reactflow__edge-${action.name}-${
+                    action.on[key]
+                  }${Math.random().toFixed(4)}`,
                   markerEnd: {
                     type: "arrowclosed" as MarkerType,
                   },
@@ -327,36 +346,47 @@ export default function Editor() {
           });
 
           modifiedNodes.map((node) => {
-            const targetedNodes = modifiedEdges.filter((edge) => edge.target === node.id)
-            node.data['targetHandles'] = targetedNodes.map((targetedEdge, index) => {
-              const targetedNode = modifiedNodes.find(node =>node.id === targetedEdge.source)
-              if (targetedNode?.data.sourceHandles.length) {
-                const notConnectedSourceHandle = targetedNode?.data.sourceHandles.find((hl)=>hl.isConnected === false)
-                notConnectedSourceHandle.isConnected = true;
-
-                targetedEdge.targetHandle =notConnectedSourceHandle.id
-
-                return {
-                  id: notConnectedSourceHandle.id,
-                }
-              } else {
-                return {
-                  id: targetedNode.id
+            const targetedNodes = modifiedEdges.filter(
+              (edge) => edge.target === node.id
+            );
+            node.data["targetHandles"] = targetedNodes.map(
+              (targetedEdge, index) => {
+                const targetedNode = modifiedNodes.find(
+                  (node) => node.id === targetedEdge.source
+                );
+                if (targetedNode?.data.sourceHandles.length) {
+                  const notConnectedSourceHandle =
+                    targetedNode?.data.sourceHandles.find(
+                      (hl) => hl.isConnected === false
+                    );
+                  notConnectedSourceHandle.isConnected = true;
+                  targetedEdge.sourceHandle = notConnectedSourceHandle.id;
+                  return {
+                    id: notConnectedSourceHandle.id,
+                    isConnected: false,
+                  };
+                } else {
+                  return {
+                    id: targetedNode.id,
+                  };
                 }
               }
-            }
-            )
-          })
-
+            );
+          });
+          console.log(modifiedEdges, modifiedNodes);
+          modifiedEdges.forEach((edge) => {
+            const targetedNode: any = modifiedNodes.find(
+              (node) => edge.target === node.id
+            );
+            if (!targetedNode?.data?.targetHandles?.length) return;
+            const targetHandle = targetedNode.data.targetHandles.find(
+              (el) => !el.isConnected
+            );
+            targetHandle.isConnected = true;
+            edge.targetHandle = targetHandle.id;
+          });
 
           console.log(modifiedNodes, modifiedEdges);
-
-          // const { modifiedNodes: layoutedNodes, edges: layoutedEdges } =
-          //   getLayoutedElements(modifiedNodes, edges, "LR");
-
-          // console.log(layoutedNodes, layoutedEdges);
-          // setNodes(layoutedNodes);
-          // setEdges(layoutedEdges);
 
           const opts = { "elk.direction": "RIGHT", ...elkOptions };
           const ns = modifiedNodes;
@@ -365,6 +395,7 @@ export default function Editor() {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           getLayoutedElements(ns, es, opts).then((res: any) => {
             console.log(res.nodes, res.edges);
+
             setNodes(res.nodes);
             setEdges(res.edges);
 
@@ -376,13 +407,78 @@ export default function Editor() {
 
           //   window.requestAnimationFrame(() => fitView());
           // }
-
         })
         .catch((error) => {
           console.error("Error fetching JSON:", error);
         });
     }
+    const element = document.querySelector("#uploadImage");
+    element.nodeValue = "";
   };
+
+  const handleExportJson = () => {
+    console.log(nodes, edges);
+    let phaseNodes = nodes.filter((node) => node.type === "phaseNode");
+    const obj: any = {
+      name: fileName,
+      states: [],
+    };
+
+    obj.states = phaseNodes.map((node) => {
+      const nodeObj: any = {};
+      nodeObj.name = node.data.label;
+      const phaseActionNodes = edges
+        .filter((edge) => edge.source === node.id)
+        .map((el) => el.target);
+      nodeObj.actions = nodes
+        .filter(
+          (actionNode: any) =>
+            actionNode.type === "actionNode" &&
+            phaseActionNodes.includes(actionNode.id)
+        )
+        .map((action) => {
+          const actionObj: any = {};
+          actionObj.name = action.data.label;
+          actionObj.type = action.data.url;
+          actionObj.on = {};
+          edges.forEach((actionEdge: any) => {
+            if (actionEdge.source === action.id) {
+              const targetNode = nodes.find(
+                (node) => actionEdge.target === node.id
+              );
+              if (targetNode) {
+                actionObj.on[actionEdge.label] = targetNode.data.label;
+              }
+            }
+          });
+          return actionObj;
+        });
+      return nodeObj;
+    });
+
+    console.log(obj);
+
+    const jsonString = JSON.stringify(obj, null, 2);
+
+    const blob = new Blob([jsonString], { type: "application/json" });
+
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = obj.name;
+    a.style.display = "none";
+
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleCloseDialog=()=>{
+    setDialog(false)
+    handleExportJson()
+  }
 
   return (
     <div className="w-100 h-screen">
@@ -419,15 +515,35 @@ export default function Editor() {
             </svg>
           </div>
         </div>
-
-        <div
-          className="absolute w-[50px] h-[50px] rounded-3xl z-10 pointer-events-auto cursor-pointer border-[1px] border-[#ffffff1A] p-[4px] bg-[#fff] top-10 right-5 flex flex-row justify-center items-center"
-          onClick={() => {
-            document.getElementById("uploadImage").click();
-          }}
-        >
-          <CloudUploadIcon sx={{ fontSize: "24px", color: "#000" }} />
-        </div>
+        <Tooltip title="Upload Json">
+          <div
+            className="absolute w-[36px] h-[36px] rounded-3xl z-10 pointer-events-auto cursor-pointer border-[1px] border-[#ffffff1A] p-[4px] bg-[#fff] top-5 right-5 flex flex-row justify-center items-center"
+            onClick={() => {
+              document.getElementById("uploadImage").click();
+            }}
+          >
+            <CloudUploadIcon sx={{ fontSize: "24px", color: "#000" }} />
+          </div>
+        </Tooltip>
+        <Tooltip title="Reset">
+          <div
+            className="absolute w-[36px] h-[36px] rounded-3xl z-10 pointer-events-auto cursor-pointer border-[1px] border-[#ffffff1A] p-[4px] bg-[#fff] top-5 right-[120px] flex flex-row justify-center items-center"
+            onClick={() => {
+              setNodes([]);
+              setEdges([]);
+            }}
+          >
+            <ClearIcon sx={{ fontSize: "24px", color: "#000" }} />
+          </div>
+        </Tooltip>
+        <Tooltip title="Export Json">
+          <div
+            className="absolute w-[36px] h-[36px] rounded-3xl z-10 pointer-events-auto cursor-pointer border-[1px] border-[#ffffff1A] p-[4px] bg-[#fff] top-5 right-[70px] flex flex-row justify-center items-center"
+            onClick={()=> setDialog(true)}
+          >
+            <CloudDownloadIcon sx={{ fontSize: "24px", color: "#000" }} />
+          </div>
+        </Tooltip>
         <input
           className="invisible"
           type="file"
@@ -435,6 +551,19 @@ export default function Editor() {
           onChange={handleUpload}
         />
       </ReactFlow>
+
+      <DialogComponent
+        isOpen={dialogOpen}
+        title="Name Your Flow"
+        content={
+          <>
+          <CustomInput type="text" name="input" placeholder="Enter Flow Name" value={fileName} onChange={(e)=>{
+            setFileName(e.target.value)
+          }}/>
+          </>
+        }
+        onClose={handleCloseDialog}
+      />
     </div>
   );
 }

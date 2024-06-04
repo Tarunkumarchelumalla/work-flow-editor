@@ -36,7 +36,7 @@ const Sidebar = () => {
               <img  onDragStart={(event) => onDragStart(event, {type:'actionNode',url:'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/2062095_application_chat_communication_logo_whatsapp_icon.svg/1200px-2062095_application_chat_communication_logo_whatsapp_icon.svg.png'})}
                 draggable src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/2062095_application_chat_communication_logo_whatsapp_icon.svg/1200px-2062095_application_chat_communication_logo_whatsapp_icon.svg.png" width={44} height={44} className="rounded-2xl"/>
             </Grid>
-            <Grid item xs={6}>
+            {/* <Grid item xs={6}>
               <Card
                 onDragStart={(event) => onDragStart(event, "actionNode")}
                 draggable
@@ -53,7 +53,7 @@ const Sidebar = () => {
               >
                 <Box sx={{ flexGrow: 1, minWidth: 0 }}>Action Node</Box>
               </Card>
-            </Grid>
+            </Grid> */}
           </Grid>
         </Grid>
         {/* <Grid item xs={6}>

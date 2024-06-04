@@ -1,5 +1,5 @@
 import React from 'react'
-
+import './input.css'
 interface CustomInputProps {
     icon?: React.ReactNode;
     type: string;
