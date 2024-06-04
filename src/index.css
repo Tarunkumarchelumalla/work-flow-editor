@@ -452,3 +452,7 @@ input::placeholder {
   right: -2px;
   top: 0;
 }
+.handles.targets {
+  left:-2px ;
+  top: 0;
+}

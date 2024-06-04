@@ -10,7 +10,7 @@ import {
 import ClearIcon from "@mui/icons-material/Clear";
 import { Toolbar } from "../components/Toolbar";
 
-const ResizableNodeSelected = ({ data, selected }) => {
+const ResizableNodeSelected = ({ data, selected,isConnectable }) => {
   const [isEdit, setIsEdit] = useState(false);
   const [inputValue, setInputValue] = useState(data.label);
   const currentNodeId = useNodeId();
@@ -122,7 +122,23 @@ const ResizableNodeSelected = ({ data, selected }) => {
           onMore={(e) => console.log(e)}
         />
       </NodeToolbar>
-      <Handle type="target" position={Position.Left} />
+      <div className="handles targets">
+        {data?.targetHandles?.length ? data.targetHandles.map((handle) => (
+          <Handle
+            key={handle.id}
+            id={handle.id}
+            type="target"
+            position={Position.Left}
+          />
+        )) : (<Handle
+          type="target"
+          position={Position.Left}
+          style={{ top: "50%", background: "#555" }}
+          isConnectable={isConnectable}
+        />)
+
+        }
+      </div>
       <div
         style={{
           padding: 10,
@@ -182,7 +198,23 @@ const ResizableNodeSelected = ({ data, selected }) => {
           ))}
         </div>
       )}
-      <Handle type="source" position={Position.Right} />
+          <div className="handles sources">
+        {data?.sourceHandles?.length ? data.sourceHandles.map((handle) => (
+          <Handle
+            key={handle.id}
+            id={handle.id}
+            type="source"
+            position={Position.Right}
+          />
+        )) : (<Handle
+          type="source"
+          position={Position.Right}
+          style={{ top: "50%", background: "#555" }}
+          isConnectable={isConnectable}
+        />)
+
+        }
+      </div>
     </>
   );
 };

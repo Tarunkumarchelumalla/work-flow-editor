@@ -97,9 +97,9 @@ const ActionNode = ({ data, selected, isConnectable }) => {
 
   const [actionArray, setActionArray] = useState([]);
 
-  useEffect(()=>{
+  useEffect(() => {
     console.log(data)
-  },[])
+  }, [])
 
   return (
     <>
@@ -121,19 +121,22 @@ const ActionNode = ({ data, selected, isConnectable }) => {
           onMore={(e) => console.log(e)}
         />
       </NodeToolbar>
-      <Handle
-        type="target"
-        position={Position.Left}
-        isConnectable={isConnectable}
-      />
-      {/* {data.targetHandles.map((handle) => (
-        <Handle
-          key={handle.id}
-          id={handle.id}
+      <div className="handles targets">
+        {data?.targetHandles?.length ? data.targetHandles.map((handle) => (
+          <Handle
+            key={handle.id}
+            id={handle.id}
+            type="target"
+            position={Position.Left}
+          />
+        )) : (<Handle
           type="target"
           position={Position.Left}
-        />
-      ))} */}
+          isConnectable={isConnectable}
+        />)
+
+        }
+      </div>
       <div
         className="p-[10px] min-w-[200px] flex flex-col justify-center items-center flex-wrap gap-[4px]"
         onDoubleClick={handleDblClick}
@@ -187,21 +190,16 @@ const ActionNode = ({ data, selected, isConnectable }) => {
         </div>
       )}
       <div className="handles sources">
-        {data.sourceHandles ? data.sourceHandles.map((handle) => (
-          <Handle
-            key={handle.id}
-            id={handle.id}
-            type="source"
-            position={Position.Right}
-          />
-        )):(      <Handle
-          type="source"
-          position={Position.Right}
-          style={{ top: "50%", background: "#555" }}
-          isConnectable={isConnectable}
-        />)
-        
-        }
+        {data?.sourceHandles?.length ? (
+          data.sourceHandles.map((handle) => (
+            <Handle
+              key={handle.id}
+              id={handle.id}
+              type="source"
+              position={Position.Right}
+            />
+          ))
+        ) : null}
 
       </div>
     </>

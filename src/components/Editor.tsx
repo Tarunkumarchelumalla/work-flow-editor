@@ -84,7 +84,7 @@ const getLayoutedElements = (nodes, edges, options = {}) => {
         ...node,
         // React Flow expects a position property on the node instead of `x`
         // and `y` fields.
-        position: { x: node.x, y: node.y *10 },
+        position: { x: node.x, y: node.y * 10 },
       })),
 
       edges: layoutedGraph.edges,
@@ -235,7 +235,7 @@ export default function Editor() {
   //   initialEdges
   // );
   const { fitView } = useReactFlow();
- 
+
   const handleUpload = (event) => {
     const nodeStyle = {
       background: "#18181B",
@@ -254,12 +254,17 @@ export default function Editor() {
         .then((jsonData) => {
           console.log(jsonData);
           const { states } = jsonData;
-          const edges = [];
-          const nodes = states.map((el: any) => {
+          const modifiedEdges = [];
+          const modifiedNodes = states.map((el: any) => {
             el.id = el.name;
             el.data = {
               label: el.name,
-              sourceHandles:el.actions.map((action)=>{const nodeEdgeObj:any={}; return nodeEdgeObj.id=`${el.name}-${action.name}` })
+              sourceHandles: el.actions.map((action) => {
+                const nodeEdgeObj: any = {};
+                nodeEdgeObj.id = `${el.name}-${action.name}`;
+                nodeEdgeObj.isConnected = false;
+                return nodeEdgeObj;
+              })
             };
             el.type = "resizableNodeSelected";
             el.style = nodeStyle;
@@ -270,8 +275,9 @@ export default function Editor() {
             node.actions.forEach((action) => {
               const actionOnKeys = Object.keys(action.on);
               const sourceHandles = actionOnKeys.map((key) => {
-                const temp:any = {};
+                const temp: any = {};
                 temp.id = `${action.name}-${key}`;
+                temp.isConnected = false
                 return temp;
               });
               const obj = {
@@ -279,77 +285,82 @@ export default function Editor() {
                 type: "actionNode",
                 data: {
                   label: action.name,
-                  sourceHandles:sourceHandles,
+                  sourceHandles: sourceHandles,
                 },
               };
-              nodes.push(obj);
+              modifiedNodes.push(obj);
               const nodeActionEdge = {
 
-                source:node.name,
+                source: node.name,
                 target: action.name,
 
                 data: {
                   label: action.name,
                 },
-                id: `reactflow__edge-${node.name}-${
-                  action.name
-                }${Math.random().toFixed(4)}`,
+                id: `reactflow__edge-${node.name}-${action.name
+                  }${Math.random().toFixed(4)}`,
                 markerEnd: {
                   type: "arrowclosed" as MarkerType,
                 },
               };
 
-              edges.push(nodeActionEdge);
+              modifiedEdges.push(nodeActionEdge);
 
               const keys = Object.keys(action.on);
-              keys.forEach((key,index) => {
+              keys.forEach((key, index) => {
                 const edgeObj = {
                   type: "editableEdge",
                   source: action.name,
                   sourceHandle: `${action.name}-${key}`,
                   target: action.on[key],
                   label: key,
-                  id: `reactflow__edge-${action.name}-${
-                    action.on[key]
-                  }${Math.random().toFixed(4)}`,
+                  id: `reactflow__edge-${action.name}-${action.on[key]
+                    }${Math.random().toFixed(4)}`,
                   markerEnd: {
                     type: "arrowclosed" as MarkerType,
                   },
                 };
 
-                edges.push(edgeObj);
+                modifiedEdges.push(edgeObj);
               });
             });
           });
-          nodes.map((node)=>{
-            const targetedNodes = nodes.filter((edge)=> edge.target === node.id)
-            node.data['targetHandles']= targetedNodes.map((targetedNode,index)=>
-            {
-              if(targetedNode?.data.sourceHandles.length){
-                const id= targetedNode?.data.sourceHandles[index]
+
+          modifiedNodes.map((node) => {
+            const targetedNodes = modifiedEdges.filter((edge) => edge.target === node.id)
+            node.data['targetHandles'] = targetedNodes.map((targetedEdge, index) => {
+              const targetedNode = modifiedNodes.find(node =>node.id === targetedEdge.source)
+              if (targetedNode?.data.sourceHandles.length) {
+                const notConnectedSourceHandle = targetedNode?.data.sourceHandles.find((hl)=>hl.isConnected === false)
+                notConnectedSourceHandle.isConnected = true;
+
+                targetedEdge.targetHandle =notConnectedSourceHandle.id
+
                 return {
-                  id
+                  id: notConnectedSourceHandle.id,
                 }
-              }else{
+              } else {
                 return {
-                  id:targetedNode
+                  id: targetedNode.id
                 }
               }
             }
             )
           })
-          console.log(nodes, edges);
 
-          // const { nodes: layoutedNodes, edges: layoutedEdges } =
-          //   getLayoutedElements(nodes, edges, "LR");
+
+          console.log(modifiedNodes, modifiedEdges);
+
+          // const { modifiedNodes: layoutedNodes, edges: layoutedEdges } =
+          //   getLayoutedElements(modifiedNodes, edges, "LR");
 
           // console.log(layoutedNodes, layoutedEdges);
           // setNodes(layoutedNodes);
           // setEdges(layoutedEdges);
 
           const opts = { "elk.direction": "RIGHT", ...elkOptions };
-          const ns = nodes;
-          const es = edges;
+          const ns = modifiedNodes;
+          const es = modifiedEdges;
 
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           getLayoutedElements(ns, es, opts).then((res: any) => {
@@ -359,13 +370,13 @@ export default function Editor() {
 
             window.requestAnimationFrame(() => fitView());
           });
-          ({ nodes: layoutedNodes, edges: layoutedEdges }) => {
-            setNodes(layoutedNodes);
-            setEdges(layoutedEdges);
+          // ({ nodes: layoutedNodes, edges: layoutedEdges }) => {
+          //   setNodes(layoutedNodes);
+          //   setEdges(layoutedEdges);
 
-            window.requestAnimationFrame(() => fitView());
-          }
-          
+          //   window.requestAnimationFrame(() => fitView());
+          // }
+
         })
         .catch((error) => {
           console.error("Error fetching JSON:", error);
